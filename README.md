@@ -13,3 +13,8 @@ cd "MO1 Opesy"
 cmake -S . -B out/build/x64-debug
 cmake --build out/build/x64-debug
 ```
+
+## For my groupmates:
+- Please use PascalCase for classes and structs
+- Use camelCase for functions and methods
+- I love ccsqts

@@ -4,6 +4,6 @@
 
 int main(int argc, char* argv[])
 {
-	console(&argv[0]);
+	console(argv);
 	return 0;
 }
