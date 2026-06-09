@@ -12,4 +12,4 @@ endif()
 project ("MO1 Opesy")
 
 # Include sub-projects.
-add_subdirectory ("MO1 Opesy")
+add_subdirectory ("src")

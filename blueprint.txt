@@ -1,0 +1,20 @@
+﻿MO1 Opesy/                    ← repo root
+├── CMakeLists.txt            ← root (keep as-is)
+├── CMakePresets.json
+├── config.txt                ← put here, set VS working dir to repo root
+└── src/                      ← rename your "MO1 Opesy" subfolder to this
+    ├── CMakeLists.txt
+    ├── main.cpp
+    ├── cli/
+    │   ├── Console.h/.cpp       ← main menu loop, command dispatch
+    │   └── ScreenView.h/.cpp    ← screen -s/-r/-ls, process-smi
+    ├── scheduler/
+    │   ├── IScheduler.h         ← abstract base
+    │   ├── FCFSScheduler.h/.cpp
+    │   └── RRScheduler.h/.cpp
+    ├── process/
+    │   ├── Process.h/.cpp       ← state, instruction list, print logs
+    │   └── Instruction.h/.cpp   ← PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR
+    └── core/
+        ├── Config.h/.cpp        ← reads config.txt
+        └── CPUCore.h/.cpp       ← tick counter, busy-wait logic
