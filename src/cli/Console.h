@@ -2,7 +2,7 @@
 
 #include <string>
 
-const std::string logo = R"(                                                   
+inline const std::string logo = R"(                                                   
                                    ___                
                       ,----.     ,--.'|_              
    ,---.             /   /  \-.  |  | :,'             
