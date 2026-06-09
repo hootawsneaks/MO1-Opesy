@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <iostream>
 #include <string>
 
 const std::string logo = R"(                                                   

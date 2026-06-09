@@ -3,6 +3,7 @@
 #endif
 #include "Console.h"
 #include "core/Config.h"
+#include <iostream>
 #include <unordered_map>
 #include <functional> // for lambdas
 #include <sstream> // for convenient text extraction

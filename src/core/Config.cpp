@@ -1,4 +1,7 @@
 #include "Config.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 std::optional<Config> init(char* argv[]) {
 	std::filesystem::path exeDir = std::filesystem::path(argv[0]).parent_path();
