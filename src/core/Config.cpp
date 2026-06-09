@@ -5,7 +5,7 @@ std::optional<Config> init(char* argv[]) {
 	std::filesystem::path configPath = exeDir / "config.txt";
 	Config config = {};
 	std::string key, value;
-	std::cout << "Initializing confing file\n";
+	std::cout << "Initializing config file\n";
 	std::ifstream file(configPath);
 	if (file) {
 		std::cout << "Config file successfully found at " << configPath << "\n";

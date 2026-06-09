@@ -5,6 +5,7 @@
 #include "core/Config.h"
 #include <unordered_map>
 #include <functional> // for lambdas
+#include <sstream> // for convenient text extraction
 
 void console(char* argv[]) {
 	std::string input;
@@ -21,9 +22,36 @@ void console(char* argv[]) {
 			running = false;
 		}},
 		{"screen", [&]() {
-			if (initialized) {
-				/*screen implementation*/
+			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+			std::string _, flag, arg;
+			std::istringstream ss(input);
+			ss >> _ >> flag >> arg;
+			std::cout << flag << "\n";
+			if (flag == "-ls") {
+				/* list processes */
+				std::cout << "im listing\n";
 			}
+			else if (flag == "-s") {
+				/* create process where arg is the name */
+				std::cout << "im creating\n";
+			}
+			else if (flag == "-r") {
+				/* reattach to process where arg is the process */
+				std::cout << "im attaching\n";
+			}
+			else { std::cout << "Screen flag not recognized.\n"; }
+		}},
+		{"scheduler-start", [&]() {
+			/* nothing burger */
+			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+		}},
+		{"scheduler-stop", [&]() {
+			/* something burger */
+			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+		}},
+		{"report-util", [&]() {
+			/* something burger */
+			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
 		}},
 	};
 
@@ -42,7 +70,10 @@ void console(char* argv[]) {
 	do {
 		std::cout << "> ";
 		std::getline(std::cin, input);
-		auto it = commands.find(input);
+		std::istringstream ss(input);
+		std::string cmd;
+		ss >> cmd;
+		auto it = commands.find(cmd);
 		if (it != commands.end()) {
 			it->second();
 		}
