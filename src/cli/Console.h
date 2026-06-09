@@ -21,4 +21,4 @@ const std::string logo = R"(
 
 const std::string motd = "0.0.0";
 
-void console();
+void console(char* argv[]);

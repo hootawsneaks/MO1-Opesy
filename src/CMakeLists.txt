@@ -2,8 +2,10 @@
 # project specific logic here.
 #
 
-# for ascii art with utf
-add_compile_options(/utf-8)
+# for ascii art with utf, which is apparently msvc-only
+if(MSVC)
+	add_compile_options(/utf-8)
+endif()
 
 # Add source to this project's executable.
 file(GLOB_RECURSE SOURCES "*.cpp")
@@ -14,4 +16,5 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET csopesy PROPERTY CXX_STANDARD 20)
 endif()
 
-# TODO: Add tests and install targets if needed.
+# copy config.txt into the build folder right next to the exe
+configure_file(${CMAKE_SOURCE_DIR}/config.txt ${CMAKE_CURRENT_BINARY_DIR}/config.txt COPYONLY)

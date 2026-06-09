@@ -1,7 +1,9 @@
-﻿#include "cli/Console.h"
+﻿// osqts exclusive
 
-int main()
+#include "cli/Console.h"
+
+int main(int argc, char* argv[])
 {
-	console();
+	console(&argv[0]);
 	return 0;
 }

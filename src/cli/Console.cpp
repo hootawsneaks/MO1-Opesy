@@ -1,7 +1,8 @@
 #include "Console.h"
+#include "core/Config.h"
 #include <windows.h>
 
-void console() {
+void console(char* argv[]) {
 	std::string input;
 #ifdef _WIN32															// for windows theres a chance that the terminal doesnt support ascii escape characters (apparently), this is assurance
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -9,6 +10,7 @@ void console() {
 	GetConsoleMode(hOut, &mode);
 	SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 #endif
+	init(&argv[0]);
 	std::cout << "\033[32m" << logo << "\033[0m\n";
 	std::cout << "-------------------------------------------------------" << "\n";
 	std::cout << "\033[32m" << "Hello! Welcome to the CSOPESY command line!" << "\033[0m\n\n";
