@@ -3,6 +3,7 @@
 #endif
 #include "Console.h"
 #include "core/Config.h"
+#include "core/CPUCore.h"
 #include <iostream>
 #include <unordered_map>
 #include <functional> // for lambdas
@@ -11,16 +12,18 @@
 void console(char* argv[]) {
 	std::string input;
 	std::optional<Config> config;
-	bool initialized = false;
-	bool running = true;
+	std::thread tickThread;
+	bool initialized = false; // a boolean corresponding to if the init function has ran (successfully)
 	std::unordered_map<std::string, std::function<void()>> commands = {
 		{"initialize", [&]() {
-			auto config = init(argv);
+			config = init(argv);
 			if (!config) { std::cout << "Initialization failed." << std::endl; return; }
-			else { initialized = true; }
+			initialized = true; 
+			tickThread = std::thread(tickLoop); 
 		}},
 		{"exit", [&]() {
 			running = false;
+			tickThread.join();
 		}},
 		{"screen", [&]() {
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
@@ -54,6 +57,10 @@ void console(char* argv[]) {
 			/* something burger */
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
 		}},
+		{"ticks", [&]() {
+			std::cout << cpuTicks.load() << "\n";
+			return;
+		}}
 	};
 
 #ifdef _WIN32															// for windows theres a chance that the terminal doesnt 
@@ -69,7 +76,7 @@ void console(char* argv[]) {
 	std::cout << "\033[33m" << "Developers: \nKean Carvin, Gideon Chua, Daniel Pua, Bea Uy" << "\033[0m\n";
 	std::cout << "-------------------------------------------------------" << "\n";
 	do {
-		std::cout << "> ";
+		std::cout << "qtsRoot:\\> ";
 		std::getline(std::cin, input);
 		std::istringstream ss(input);
 		std::string cmd;
@@ -78,5 +85,5 @@ void console(char* argv[]) {
 		if (it != commands.end()) {
 			it->second();
 		}
-	} while (running);
+	} while (running || !initialized);
 }
