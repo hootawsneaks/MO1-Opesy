@@ -12,3 +12,5 @@ struct Scheduler {
 	std::mutex finishedMutex;
 	std::condition_variable cv;
 };
+
+void enqueue(Scheduler& sched, Process& p);

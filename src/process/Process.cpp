@@ -5,7 +5,8 @@
 #include <iomanip>
 #include <iostream>
 
-std::string getTimestamp() {
+// voodoo grabbed from the netz. how the hell is it so difficult to get the damn time??
+std::string getTimestamp() { 
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
     struct tm timeInfo;
