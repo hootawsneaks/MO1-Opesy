@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 
-enum InstructionType { PRINT };
+enum InstructionType { PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR };
 enum class ProcessState {
 	READY,
 	RUNNING,
@@ -29,5 +29,6 @@ struct Process {
 };
 
 void executeInstruction(Process& p);
-void initProcessLog();
+void initProcessLog(Process& p);
+void finishProcessLog(Process& p);
 std::string getTimestamp();

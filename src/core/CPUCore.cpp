@@ -9,3 +9,11 @@ void tickLoop() {
 		cpuTicks++;
 	}
 }
+
+void startWorker(){
+
+}
+
+void stopWorker() {
+
+}
