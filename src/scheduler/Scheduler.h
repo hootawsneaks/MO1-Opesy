@@ -1,0 +1,14 @@
+#pragma once
+#include <queue>
+#include <mutex>
+#include <vector>
+#include <condition_variable>
+#include "process/Process.h"
+
+struct Scheduler {
+	std::queue<Process*> readyQueue;
+	std::vector<Process*> finishedList;
+	std::mutex readyMutex;
+	std::mutex finishedMutex;
+	std::condition_variable cv;
+};

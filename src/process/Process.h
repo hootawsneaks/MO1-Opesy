@@ -1,10 +1,33 @@
 #pragma once
+#include <cstdint>
+#include <string>
+#include <fstream>
+#include <vector>
+
+enum InstructionType { PRINT };
+enum class ProcessState {
+	READY,
+	RUNNING,
+	WAITING,
+	FINISHED
+};
+
+struct Instruction {
+	InstructionType type;
+	std::string arg1;
+};
 
 struct Process {
-	enum class ProcessState {
-		READY,
-		RUNNING,
-		WAITING,
-		FINISHED
-	};
+	std::string processName;
+	uint16_t pid;
+	std::vector<Instruction> instructions;
+	uint16_t programCounter;
+	ProcessState state;
+	int assignedCore{ -1 };
+	std::string timestamp;
+	std::ofstream outputFile;
 };
+
+void executeInstruction(Process& p);
+void initProcessLog();
+std::string getTimestamp();
