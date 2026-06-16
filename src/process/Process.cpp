@@ -22,9 +22,11 @@ void executeInstruction(Process& p) {
 
     switch (ins.type) {
         case PRINT:
-            p.outputFile << getTimestamp() << "Core: " << p.assignedCore << "Hello world from " << p.processName << "!" << std::endl;
+            p.outputFile << getTimestamp() << "Core: " << p.assignedCore << " \"Hello world from " << p.processName << "!\"" << std::endl;
             break;
+        default: break;
     }
+
     p.programCounter++;
 }
 
