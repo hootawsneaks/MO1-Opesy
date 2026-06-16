@@ -13,7 +13,7 @@ std::string getTimestamp() {
     localtime_s(&timeInfo, &time);
 
     std::stringstream ss;
-    ss << std::put_time(&timeInfo, "%m/%d/%Y %I:%M:%S%p");
+    ss << std::put_time(&timeInfo, "(%m/%d/%Y %I:%M:%S%p)");
     return ss.str();
 }
 
@@ -22,7 +22,7 @@ void executeInstruction(Process& p) {
 
     switch (ins.type) {
         case PRINT:
-            p.outputFile << getTimestamp() << "Core: " << p.assignedCore << " \"Hello world from " << p.processName << "!\"" << std::endl;
+            p.outputFile << getTimestamp() << " Core: " << p.assignedCore << " \"Hello world from " << p.processName << "!\"" << std::endl;
             break;
         default: break;
     }

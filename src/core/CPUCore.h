@@ -12,3 +12,4 @@ void tickLoop(); // function handling adding stuff to cpuTicks. Should run in a 
 void startWorker(int coreId, Scheduler& sched); // job hunting. now i get why theyre called workers
 void startCores(int numCpu, Scheduler& sched);
 void stopCores(Scheduler& sched);
+void print(Scheduler& sched);

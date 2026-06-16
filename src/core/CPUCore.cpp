@@ -33,6 +33,10 @@ void startWorker(int coreId, Scheduler& sched){
 
 		p->state = ProcessState::RUNNING;
 		p->assignedCore = coreId;
+		{
+			std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
+			sched.coreProcesses[coreId] = p;
+		}
 
 		initProcessLog(*p);
 		while (p->programCounter < p->instructions.size()) {
@@ -44,6 +48,10 @@ void startWorker(int coreId, Scheduler& sched){
 		}
 
 		p->state = ProcessState::FINISHED;
+		{
+			std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
+			sched.coreProcesses[coreId] = nullptr;
+		}
 		finishProcessLog(*p);
 
 		{

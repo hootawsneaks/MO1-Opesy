@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include "core/CPUCore.h"
 
 inline const std::string logo = R"(                                                   
                                    ___                
@@ -20,4 +21,6 @@ inline const std::string logo = R"(
 
 const std::string motd = "0.0.0";
 
+void printProcessList(Scheduler& sched);
 void console(char* argv[]);
+
