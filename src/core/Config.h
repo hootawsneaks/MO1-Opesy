@@ -14,5 +14,5 @@ struct Config {
 	uint32_t delaysPerExec = 0;
 };
 
-std::optional<Config> init(char* argv[]);
+std::optional<Config> initConfig(char* argv[]);
 

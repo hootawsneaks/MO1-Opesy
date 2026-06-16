@@ -11,18 +11,23 @@
 
 void console(char* argv[]) {
 	std::string input;
-	std::optional<Config> config;
+	Config config;
 	std::thread tickThread;
+	Scheduler sched;
+
 	bool initialized = false; // a boolean corresponding to if the init function has ran (successfully)
 	std::unordered_map<std::string, std::function<void()>> commands = {
 		{"initialize", [&]() {
-			config = init(argv);
-			if (!config) { std::cout << "Initialization failed." << std::endl; return; }
+			std::optional<Config> result = initConfig(argv);
+			if (!result) { std::cout << "Initialization failed." << std::endl; return; }
+			Config config = *result;
+			startCores(config.numCpu, sched);
 			initialized = true; 
 			tickThread = std::thread(tickLoop); 
 		}},
 		{"exit", [&]() {
-			running = false;
+			// redundant but just to be clear. running stops here. stopCores does so.
+			stopCores(sched);
 			tickThread.join();
 		}},
 		{"screen", [&]() {

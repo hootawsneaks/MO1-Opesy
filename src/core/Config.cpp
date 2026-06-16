@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-std::optional<Config> init(char* argv[]) {
+std::optional<Config> initConfig(char* argv[]) {
 	std::filesystem::path exeDir = std::filesystem::path(argv[0]).parent_path();
 	std::filesystem::path configPath = exeDir / "config.txt";
 	Config config = {};
