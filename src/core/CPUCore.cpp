@@ -40,7 +40,7 @@ void startWorker(int coreId, Scheduler& sched){
 
 		initProcessLog(*p);
 		while (p->programCounter < p->instructions.size()) {
-			while (cpuTicks.load() == lastTick) {
+			while (cpuTicks.load() == lastTick && running) {
 				std::this_thread::yield();
 			}
 			lastTick = cpuTicks.load();

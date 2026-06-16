@@ -52,23 +52,22 @@ void console(char* argv[]) {
 	bool initialized = false; // a boolean corresponding to if the init function has ran (successfully)
 	std::unordered_map<std::string, std::function<void()>> commands = {
 		{"initialize", [&]() {
-			std::optional<Config> result = initConfig(argv);
-			if (!result) { std::cout << "Initialization failed." << std::endl; return; }
-			Config config = *result;
-			sched.coreProcesses.resize(config.numCpu, nullptr);
-			startCores(config.numCpu, sched);
-			tickThread = std::thread(tickLoop); 
-			initialized = true;
+			if (!initialized) {
+				std::optional<Config> result = initConfig(argv);
+				if (!result) { std::cout << "Initialization failed." << std::endl; return; }
+				Config config = *result;
+				sched.coreProcesses.resize(config.numCpu, nullptr);
+				startCores(config.numCpu, sched);
+				tickThread = std::thread(tickLoop);
+				initialized = true;
+			}
 		}},
 		{"exit", [&]() {
-			// redundant but just to be clear. running stops here. stopCores does so.
 			if (initialized) {
 				stopCores(sched);
 				tickThread.join();
 			}
-			else {
-				running = false;
-			}
+			running = false;
 		}},
 		{"screen", [&]() {
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
@@ -134,4 +133,5 @@ void console(char* argv[]) {
 			it->second();
 		}
 	} while (running);
+
 }
