@@ -13,50 +13,92 @@ void tickLoop() {
 
 void startWorker(int coreId, Scheduler& sched){
 	while (running) {
-		// initialize a null pointer for future use
+		// initialize a null pointer for future use, for holding the process that the core will run.
 		Process* p = nullptr;
 		// grab a process if exists
 		// use a scope block to remove mutex lock after
 		uint64_t lastTick = cpuTicks.load() - 1;
 
-		{
+		// grab process from ready queue
+		{	
 			std::unique_lock<std::mutex> lock(sched.readyMutex);
 			sched.cv.wait(
 				lock, [&] {return !sched.readyQueue.empty() || !running;
 				});
 
 			if (!running) break;
-			p = sched.readyQueue.front();
-			sched.readyQueue.pop();
+			p = sched.readyQueue.front();	// get the process at the front of ready queue
+			sched.readyQueue.pop();			// remove process from ready queue
 
 		}
 
+		// claim process for this core
 		p->state = ProcessState::RUNNING;
 		p->assignedCore = coreId;
 		{
 			std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
-			sched.coreProcesses[coreId] = p;
+			sched.coreProcesses[coreId] = p;		// record the process for this core
 		}
+		
+		// if process has not run before
+		if (p->programCounter == 0) initProcessLog(*p);			// open p's log file
 
-		initProcessLog(*p);
-		while (p->programCounter < p->instructions.size()) {
-			while (cpuTicks.load() == lastTick && running) {
-				std::this_thread::yield();
+		// initialize variables for RR for this turn
+		int cyclesUsed = 0,
+			delayCounter = 0;
+		bool preempted = 0;
+
+		// FCFS: run process to completion 
+		while (p->programCounter < p->instructions.size()) {	// as long as has process left
+			while (cpuTicks.load() == lastTick && running) {	// while clock hasn't ticked since last tick
+				std::this_thread::yield();						// spin, wait for next tick
 			}
-			lastTick = cpuTicks.load();
-			executeInstruction(*p);
+			lastTick = cpuTicks.load();							// last tick = cpu tick
+			executeInstruction(*p);								// advance program counter
+
+			cyclesUsed += 1;									// add one to the cycle counter for RR
+
+			if (delayCounter >= sched.delaysPerExec) {
+				executeInstruction(*p);
+				delayCounter = 0;
+			}
+			else {
+				delayCounter += 1;
+			}
+
+			if (sched.schedulerType == RR && cyclesUsed >= sched.quantumCycles) {
+				preempted = true;
+				break;
+			}
+			
 		}
 
-		p->state = ProcessState::FINISHED;
+		// free core's slot
 		{
 			std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
 			sched.coreProcesses[coreId] = nullptr;
 		}
-		finishProcessLog(*p);
+		
+		// if preempted and still as instructions left
+		if (preempted && p->programCounter < p->instructions.size()) {
+			p->state = ProcessState::READY;	// mark p as ready
+			p->assignedCore = -1;	// clear p's assigned core
+			enqueue(sched, *p);		// put p at the back of the ready queue
+			sched.cv.notify_one();	// notify one waiting core
+		}
+		else {
+			// process is finished
+			p->state = ProcessState::FINISHED;		// mark p as finished
+			{
+				std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
+				sched.coreProcesses[coreId] = nullptr;
+			}
+			finishProcessLog(*p);	// close p's logfile
 
-		{
-			std::unique_lock<std::mutex> lock(sched.finishedMutex);
-			sched.finishedList.push_back(p);
+			{
+				std::unique_lock<std::mutex> lock(sched.finishedMutex);
+				sched.finishedList.push_back(p);	// add p to finished list
+			}
 		}
 	}
 }
