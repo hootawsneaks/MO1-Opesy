@@ -111,6 +111,11 @@ void console(char* argv[]) {
 		}},
 		{"print", [&]() {
 			print(sched);
+		}},
+		{"print20", [&]() {
+			for (int i = 0; i < 20; i++) {
+				print(sched);
+			}
 		}}
 	};
 
