@@ -60,6 +60,10 @@ void console(char* argv[]) {
 				startCores(config.numCpu, sched);
 				tickThread = std::thread(tickLoop);
 				initialized = true;
+
+				// set scheduler values
+				if (setSchedulerConfig(sched, config) == -1) std::cout << "Invalid scheduler selected -- " << config.scheduler << "\n";
+
 			}
 		}},
 		{"exit", [&]() {
