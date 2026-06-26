@@ -59,7 +59,9 @@ void startWorker(int coreId, Scheduler& sched){
 			cyclesUsed += 1;									// add one to the cycle counter for RR
 
 			if (delayCounter >= sched.delaysPerExec) {
-				executeInstruction(*p);
+				if (p->programCounter < p->instructions.size()) {
+					executeInstruction(*p);
+				}
 				delayCounter = 0;
 			}
 			else {

@@ -3,6 +3,10 @@
 #endif
 #include "Console.h"
 #include "core/Config.h"
+#include "ScreenView.h"
+#include <fstream>
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <unordered_map>
 #include <functional> // for lambdas
@@ -43,11 +47,64 @@ void printProcessList(Scheduler& sched) {
 	std::cout << "---------------------------------" << std::endl;
 }
 
+void generateReportUtil(Scheduler& sched) {
+	std::string fileName = "csopesy-log.txt";
+	std::ofstream log(fileName);
+	if (!log.is_open()) {
+		std::cout << "Failed to open " << fileName << " for writing.\n";
+		return;
+	}
+
+	int coresUsed = 0;
+	{
+		std::lock_guard<std::mutex> lock(sched.coreProcessesMutex);
+		for (auto* p : sched.coreProcesses) {
+			if (p != nullptr) coresUsed++;
+		}
+	}
+
+	log << "CPU utilization: " << (float)coresUsed / sched.coreProcesses.size() * 100 << "%\n";
+	log << "Cores used: " << coresUsed << "\n";
+	log << "Cores available: " << sched.coreProcesses.size() - coresUsed << "\n";
+	log << "---------------------------------\n";
+	log << "Running processes:\n";
+	{
+		std::unique_lock<std::mutex> lock(sched.coreProcessesMutex);
+		for (int i = 0; i < sched.coreProcesses.size(); i++) {
+			if (sched.coreProcesses[i] != nullptr) {
+				log << sched.coreProcesses[i]->processName << "\t" 
+					<< sched.coreProcesses[i]->timestamp << "\t" 
+					<< "Core: " << sched.coreProcesses[i]->assignedCore << "\t" 
+					<< sched.coreProcesses[i]->programCounter << " / " 
+					<< sched.coreProcesses[i]->instructions.size() << "\n";
+			}
+		}
+	}
+	log << "\nFinished processes:\n";
+	{
+		std::unique_lock<std::mutex> lock(sched.finishedMutex);
+		for (int i = 0; i < sched.finishedList.size(); i++) {
+			log << sched.finishedList[i]->processName << "\t" 
+				<< sched.finishedList[i]->timestamp << "\tFinished\t" 
+				<< sched.finishedList[i]->programCounter << " / " 
+				<< sched.finishedList[i]->instructions.size() << "\n";
+		}
+	}
+	log << "---------------------------------\n";
+	log.close();
+
+	std::filesystem::path currentPath = std::filesystem::current_path() / fileName;
+	std::cout << "Report generated at " << currentPath.string() << "!\n";
+}
+
 void console(char* argv[]) {
 	std::string input;
 	Config config;
 	std::thread tickThread;
 	Scheduler sched;
+	std::atomic<bool> schedulerRunning{ false };
+	std::thread backgroundSchedulerThread;
+	uint32_t processCounter = 1;
 
 	bool initialized = false; // a boolean corresponding to if the init function has ran (successfully)
 	std::unordered_map<std::string, std::function<void()>> commands = {
@@ -55,7 +112,7 @@ void console(char* argv[]) {
 			if (!initialized) {
 				std::optional<Config> result = initConfig(argv);
 				if (!result) { std::cout << "Initialization failed." << std::endl; return; }
-				Config config = *result;
+				config = *result;
 				sched.coreProcesses.resize(config.numCpu, nullptr);
 				startCores(config.numCpu, sched);
 				tickThread = std::thread(tickLoop);
@@ -70,40 +127,94 @@ void console(char* argv[]) {
 			if (initialized) {
 				stopCores(sched);
 				tickThread.join();
+
+				// Safely shut down the generator thread if it was left running
+				schedulerRunning = false;
+				if (backgroundSchedulerThread.joinable()) {
+					backgroundSchedulerThread.join();
+				}
 			}
 			running = false;
 		}},
 		{"screen", [&]() {
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+			
 			std::string _, flag, arg;
 			std::istringstream ss(input);
 			ss >> _ >> flag >> arg;
-			std::cout << flag << "\n";
+
 			if (flag == "-ls") {
-				/* list processes */
 				printProcessList(sched);
 			}
 			else if (flag == "-s") {
-				/* create process where arg is the name */
-				std::cout << "im creating\n";
+				if (arg.empty()) {
+					std::cout << "Process name required.\n";
+					return;
+				}
+				Process* p = getProcess(arg);
+				if (p != nullptr) {
+					std::cout << "Process " << arg << " already exists.\n";
+				} else {
+					p = createProcess(arg, sched, config.minIns, config.maxIns);
+					openProcessScreen(p);
+					// Reprint main header to restore standard UI feel
+					std::cout << "\033[32m" << logo << "\033[0m\n";
+				}
 			}
 			else if (flag == "-r") {
-				/* reattach to process where arg is the process */
-				std::cout << "im attaching\n";
+				if (arg.empty()) {
+					std::cout << "Process name required.\n";
+					return;
+				}
+				Process* p = getProcess(arg);
+				if (p == nullptr) {
+					std::cout << "Process " << arg << " not found.\n";
+				} else {
+					openProcessScreen(p);
+					// Reprint main header to restore standard UI feel
+					std::cout << "\033[32m" << logo << "\033[0m\n";
+				}
 			}
 			else { std::cout << "Screen flag not recognized.\n"; }
 		}},
 		{"scheduler-start", [&]() {
-			/* nothing burger */
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+			if (schedulerRunning) { std::cout << "Scheduler is already generating processes.\n"; return; }
+			
+			schedulerRunning = true;
+			backgroundSchedulerThread = std::thread([&]() {
+				uint64_t lastTick = cpuTicks.load();
+				while (schedulerRunning && running) {
+					// Check if enough CPU ticks have passed based on config.txt
+					if (cpuTicks.load() - lastTick >= config.batchProcessFreq) {
+						
+						// Format name to zero-pad (e.g. p01, p02... p1240)
+						std::stringstream ss;
+						ss << "p" << std::setfill('0') << std::setw(2) << processCounter++;
+						
+						createProcess(ss.str(), sched, config.minIns, config.maxIns);
+						lastTick = cpuTicks.load();
+					} else {
+						// Yield to prevent pegging the CPU at 100% while waiting
+						std::this_thread::yield();
+					}
+				}
+			});
+			std::cout << "Dummy process generation started.\n";
 		}},
 		{"scheduler-stop", [&]() {
-			/* something burger */
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+			if (!schedulerRunning) { std::cout << "Scheduler is not currently running.\n"; return; }
+			
+			schedulerRunning = false;
+			if (backgroundSchedulerThread.joinable()) {
+				backgroundSchedulerThread.join();
+			}
+			std::cout << "Dummy process generation stopped.\n";
 		}},
 		{"report-util", [&]() {
-			/* something burger */
 			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+			generateReportUtil(sched);
 		}},
 		{"ticks", [&]() {
 			std::cout << cpuTicks.load() << "\n";
