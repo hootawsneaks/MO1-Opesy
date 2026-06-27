@@ -33,10 +33,48 @@ Process* createProcess(const std::string& name, Scheduler& sched, uint32_t minIn
         numIns = minIns + (std::rand() % (maxIns - minIns + 1));
     }
 
-    // Populate with dummy PRINT instructions
-    Instruction printInst = { InstructionType::PRINT, "", "" };
+    // Populate with randomized instructions
     for (uint32_t i = 0; i < numIns; i++) {
-        p->instructions.push_back(printInst);
+        // Randomly pick an instruction type from 0 to 4
+        // (PRINT, DECLARE, ADD, SUBTRACT, SLEEP)
+        int randInst = std::rand() % 5;
+
+        Instruction inst;
+
+        // Generate random variable names (e.g., var0, var7) for the math operations
+        std::string v1 = "var" + std::to_string(std::rand() % 10);
+        std::string v2 = "var" + std::to_string(std::rand() % 10);
+        std::string v3 = "var" + std::to_string(std::rand() % 10);
+
+        switch (randInst) {
+            case 0: // PRINT
+                // Leaving arg1 empty triggers the default "Hello world from <process_name>!"
+                // inside Process.cpp
+                inst = { InstructionType::PRINT, "", "", "" };
+                break;
+
+            case 1: // DECLARE
+                // e.g., DECLARE var3 42
+                inst = { InstructionType::DECLARE, v1, std::to_string(std::rand() % 100), "" };
+                break;
+
+            case 2: // ADD
+                // e.g., ADD var1 var2 var3
+                inst = { InstructionType::ADD, v1, v2, v3 };
+                break;
+
+            case 3: // SUBTRACT
+                // e.g., SUBTRACT var1 var2 var3
+                inst = { InstructionType::SUBTRACT, v1, v2, v3 };
+                break;
+
+            case 4: // SLEEP
+                // Sleep for a small random number of CPU ticks (0 to 4)
+                inst = { InstructionType::SLEEP, std::to_string(std::rand() % 5), "", "" };
+                break;
+        }
+
+        p->instructions.push_back(inst);
     }
 
     // Store in our tracking map
