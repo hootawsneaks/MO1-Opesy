@@ -34,7 +34,7 @@ Process* createProcess(const std::string& name, Scheduler& sched, uint32_t minIn
     }
 
     // Populate with dummy PRINT instructions
-    Instruction printInst = { InstructionType::PRINT, "print" };
+    Instruction printInst = { InstructionType::PRINT, "", "" };
     for (uint32_t i = 0; i < numIns; i++) {
         p->instructions.push_back(printInst);
     }

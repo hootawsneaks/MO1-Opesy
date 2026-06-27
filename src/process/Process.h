@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
 
 enum InstructionType { PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR };
 enum class ProcessState {
@@ -15,6 +16,8 @@ enum class ProcessState {
 struct Instruction {
 	InstructionType type;
 	std::string arg1;
+	std::string arg2;
+	std::string arg3;
 };
 
 struct Process {
@@ -26,6 +29,8 @@ struct Process {
 	int assignedCore{ -1 };
 	std::string timestamp;
 	std::ofstream outputFile;
+	std::unordered_map<std::string, uint16_t> symbolTable; // written to on DECLARE
+	uint8_t sleepTicks{ 0 }; //remaining ticks to sleep for SLEEP instruction
 };
 
 void executeInstruction(Process& p);

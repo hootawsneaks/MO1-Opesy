@@ -227,7 +227,62 @@ void console(char* argv[]) {
 			for (int i = 0; i < 20; i++) {
 				print(sched);
 			}
-		}}
+		}},
+		{ "test-process", [&]() {
+			if (!initialized) { std::cout << "Run initialize first!\n"; return; }
+
+			Process* p = new Process();
+			p->processName = "testproc";
+			p->pid = nextPid++;
+			p->state = ProcessState::READY;
+			p->programCounter = 0;
+			p->timestamp = getTimestamp();
+			p->assignedCore = 0; // pin to core 0 for log output since we run synchronously
+
+			// 1. DECLARE x = 10
+			p->instructions.push_back({ DECLARE, "x", "10", "" });
+			// 2. DECLARE y = 20
+			p->instructions.push_back({ DECLARE, "y", "20", "" });
+			// 3. ADD z = x + y  → expect 30
+			p->instructions.push_back({ ADD, "z", "x", "y" });
+			// 4. SUBTRACT w = z - 5  → expect 25
+			p->instructions.push_back({ SUBTRACT, "w", "z", "5" });
+			// 5. ADD overflow: 65000 + 1000 → expect 65535 (clamped)
+			p->instructions.push_back({ DECLARE, "big", "65000", "" });
+			p->instructions.push_back({ ADD, "overflow", "big", "1000" });
+			// 6. SUBTRACT underflow: 3 - 100 → expect 0 (floored)
+			p->instructions.push_back({ DECLARE, "small", "3", "" });
+			p->instructions.push_back({ SUBTRACT, "underflow", "small", "100" });
+			// 7. ADD with undeclared var → ghost resolves to 0, expect ghosttest = 5
+			p->instructions.push_back({ ADD, "ghosttest", "ghost", "5" });
+			// 8. PRINT default message
+			p->instructions.push_back({ PRINT, "", "", "" });
+			// 9. PRINT custom message
+			p->instructions.push_back({ PRINT, "custom message test", "", "" });
+
+			// Run synchronously so we can inspect results immediately
+			initProcessLog(*p);
+			while (p->programCounter < static_cast<uint16_t>(p->instructions.size())) {
+				executeInstruction(*p);
+			}
+			p->state = ProcessState::FINISHED;
+			finishProcessLog(*p);
+
+			// Dump symbol table to console so you can verify each value
+			std::cout << "\n--- Symbol Table ---\n";
+			for (auto& [k, v] : p->symbolTable) {
+				std::cout << k << " = " << v << "\n";
+			}
+			std::cout << "--------------------\n";
+			std::cout << "Log written to testproc.txt\n\n";
+
+			// Register in the process map so screen -r testproc works
+			{
+				std::lock_guard<std::mutex> lock(g_processMapMutex);
+				g_processMap[p->processName] = p;
+			}
+			sched.finishedList.push_back(p);
+		} }
 	};
 
 #ifdef _WIN32															// for windows theres a chance that the terminal doesnt 
