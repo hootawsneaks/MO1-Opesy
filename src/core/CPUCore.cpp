@@ -6,7 +6,7 @@ std::atomic<uint16_t> nextPid{ 0 };
 
 void tickLoop() {
 	while (running) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		cpuTicks++;
 	}
 }
